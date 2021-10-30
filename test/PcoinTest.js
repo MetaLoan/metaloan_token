@@ -1,5 +1,5 @@
 const PolylendToken = artifacts.require("PolylendToken");
-const BigNumber = require("bignumber.js")
+const BigNumber = require("bignumber.js");
 
 let account_one;
 let account_two;
@@ -25,11 +25,11 @@ contract('MintPolicyMock', async accounts => {
     var name = await pcoinIns.name();
     var symbol = await pcoinIns.symbol();
     var decimals = (await pcoinIns.decimals()).toNumber();
-    var maxSupply = (await pcoinIns.getMaxSupply()).toNumber();
+    //var maxSupply = (await pcoinIns.getMaxSupply()).toNumber();
     assert.equal(name, "Polylend Token");
     assert.equal(symbol, "PCOIN");
     assert.equal(decimals, 18);
-    assert.equal(maxSupply, 10000*10000);
+    //assert.equal(maxSupply, 10000*10000);
     console.log(name, symbol, decimals);
   });
 
@@ -135,13 +135,21 @@ contract('MintPolicyMock', async accounts => {
     console.log(accountCounts);
   });
 
-  it('snapshot', async() => {
-    var a1_snapshot_0 = await pcoinIns.getSnapshot(account_one);
-    console.log(a1_snapshot_0.content);
+  it('blacklister', async() => {
+    //var a1_snapshot_0 = await pcoinIns.getSnapshot(account_one);
+    //console.log(a1_snapshot_0.content);
+    await pcoinIns.addBlacklist(account_four, {from: account_two});
+    // test success for transfer pcoin to account_four who is in blacklist
+    //await pcoinIns.transfer(account_four, 10000000, {from: account_three});
+    // test success for account_four who is in blacklist transfer pcoin
+    // await pcoinIns.transfer(account_three, 10000000, {from: account_four});
+    // test success for mint pcoin to account_four who is in blacklist
+    // await pcoinIns.mint(account_four, 100000000, {from: account_one});
   });
 
   it('permit', async() => {
-
+    var revision = await pcoinIns.REVISION();
+    console.log("version=" + revision);
   });
 
  });

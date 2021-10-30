@@ -1,24 +1,25 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.0;
 
 import {AccessControl} from "../dependencies/contracts/access/AccessControl.sol";
 import {ERC20} from "../dependencies/contracts/token/ERC20/ERC20.sol";
 import {SafeMath} from "../dependencies/contracts/utils/math/SafeMath.sol";
+import {VersionedInitializable} from '../utils/VersionedInitializable.sol';
 
-contract PolylendToken is ERC20, AccessControl {
+contract PolylendToken is ERC20, AccessControl, VersionedInitializable {
     using SafeMath for uint256;
 
     /******** Key Variable ********/
     /*
     * Polylend token Context contains:
-    *   name, symbol, max supply
+    *   name, symbol
     */
     string internal constant NAME = 'Polylend Token';
     string internal constant SYMBOL = 'PCOIN';
-    // the max supply of pcoin
-    uint256 immutable private MAXSUPPLY;
-    // the accounts who has pcoin
+    // the number of accounts
     uint32 public _accountCounts;
+
+    uint256 public constant REVISION = 1;
 
     /*
     * minter role: MINTER_ROLE
@@ -46,14 +47,23 @@ contract PolylendToken is ERC20, AccessControl {
     /*
     * for snapshots: for user trace their accounts
     */
-    struct SnapshotContext {
-        uint128 block;
-        uint128 balance;
+
+    /*
+    * for blacklist table
+    */
+    mapping(address => bool) internal _blacklists;
+
+    /**
+     * @dev Throws if argument account is blacklisted
+     * @param account The address to check
+    */
+    modifier notBlacker(address account) {
+        require(
+            !_blacklists[account],
+            "Blacklistable: account is blacklisted"
+        );
+        _;
     }
-    struct Snapshot {
-        SnapshotContext[] content;
-    }
-    mapping (address => Snapshot) private _snapshot;
 
     /******** Event ********/
     /*
@@ -73,12 +83,17 @@ contract PolylendToken is ERC20, AccessControl {
                          uint128 amount);
 
     /*
+    * BlackList event
+    * @param account: who is updated by owner
+    * @param update: true is add; false is delete
+    */
+    event UpdateBlackList(address indexed account, bool update);
+
+    /*
     * set admin role for pcoin by constructor account
     */
-    constructor (uint256 maxSupply) ERC20(NAME, SYMBOL)
+    constructor () ERC20(NAME, SYMBOL)
     {
-        uint256 multiBase = 10**(decimals());
-        MAXSUPPLY = maxSupply.mul(multiBase);
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _accountCounts = 0;
     }
@@ -110,29 +125,6 @@ contract PolylendToken is ERC20, AccessControl {
     }
 
     /*
-    * get max supply for pcoin
-    */
-    function getMaxSupply()
-        external
-        view
-        returns (uint256)
-    {
-        uint256 multiBase = 10**(decimals());
-        return MAXSUPPLY.div(multiBase);
-    }
-
-    /*
-    * get snapshot
-    */
-    function getSnapshot(address account)
-        external
-        view
-        returns (Snapshot memory)
-    {
-        return _snapshot[account];
-    }
-
-    /*
     * @dev changeAdmin will change admin from msgSender(old admin) to newaccount
     * @param newdmin who will become admin
     */
@@ -143,6 +135,13 @@ contract PolylendToken is ERC20, AccessControl {
         revokeRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
+    /**
+    * @dev returns the revision of the implementation contract
+    */
+    function getRevision() internal override pure returns (uint256) {
+        return REVISION;
+    }
+
     /*
     * @dev mint will mint pcoin to account by minter
     * @param account who will get pcoin
@@ -151,14 +150,13 @@ contract PolylendToken is ERC20, AccessControl {
     function mint(address account, uint256 amount)
         external
     {
+        require(hasRole(MINTER_ROLE, _msgSender()), "Caller is not a minter");
         uint256 preSupply = super.totalSupply();
         bool addRet = false;
 
         (addRet, preSupply) = preSupply.tryAdd(amount);
 
-        require(hasRole(MINTER_ROLE, _msgSender()), "Caller is not a minter");
         require(addRet, "Mint stop for overflow");
-        require(preSupply <= MAXSUPPLY, "Mint stop by total supply more than max");
         _mint(account, amount);
 
         emit Mint(account, amount);
@@ -213,6 +211,35 @@ contract PolylendToken is ERC20, AccessControl {
         _approve(owner, spender, value);
     }
 
+    /**
+    * @dev addBlacklist: Adds account to blacklist
+    * @param account The address to blacklist
+    */
+    function addBlacklist(address account) external {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Call is addBlacklist by admin");
+        _blacklists[account] = true;
+        emit UpdateBlackList(account, true);
+    }
+
+    /**
+    * @dev removeBlacklist: remove account from blacklist
+    * @param account The address in blacklist
+    */
+    function removeBlacklist(address account) external {
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Call is removeBlacklist by admin");
+        _blacklists[account] = false;
+        emit UpdateBlackList(account, false);
+    }
+
+    /*
+    * @dev isBlacker: the account
+    * @param account the address of account
+    * return: if the account in blacklist it will return true, or else return false
+    */
+    function isBlacker(address account) external view returns (bool) {
+        return _blacklists[account];
+    }
+
     /*
     * record snapshots for from/to account
     */
@@ -224,55 +251,29 @@ contract PolylendToken is ERC20, AccessControl {
         internal
         virtual
         override
+        notBlacker(from)
+        notBlacker(to)
     {
         if ( from == to || amount == 0 ) {
             return;
         }
-        uint256 balance = 0;
+        uint128 balance = 0;
+        uint128 curBlock = uint128(block.number);
 
         if ( from != address(0) ) {
-            balance = balanceOf(from);
-            _recordSnapshot(from, (uint128)(balance));
+            balance = uint128(balanceOf(from));
+            emit SnapshotRecord(from, curBlock, balance);
             if ( balance == amount ) {
                 _accountCounts--;
             }
         }
 
         if ( to != address(0) ) {
-            balance = balanceOf(to);
-            _recordSnapshot(to, (uint128)(balance));
+            balance = uint128(balanceOf(to));
+            emit SnapshotRecord(to, curBlock, balance);
             if ( balance == 0 ) {
                 _accountCounts++;
             }
         }
-    }
-
-    /*
-    * record snapshot for previously balance of user
-    */
-    function _recordSnapshot(
-        address account,
-        uint128 balance
-    )
-        internal
-    {
-        uint128 curBlock = uint128(block.number);
-
-        SnapshotContext[] storage snapshot = _snapshot[account].content;
-        uint256 length = snapshot.length;
-
-        if ( length == 0 ) {
-            snapshot.push( SnapshotContext(curBlock, balance) );
-        }
-        else {
-            if ( snapshot[length-1].block < curBlock ) {
-                snapshot.push( SnapshotContext(curBlock, balance) );
-            }
-            else {
-                return;
-            }
-        }
-
-        emit SnapshotRecord(account, curBlock, balance);
     }
 }

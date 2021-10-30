@@ -2,18 +2,19 @@
 
 ### Overview
 
-the ERC20 token for the plane of polylend call Pcoin
+- the ERC20 token for the plane of polylend call Pcoin
+- it publishes in eth/Goerli and maps to polygon/mumbai
 
 ### Description
 
 - **Mint**
 
-  deposit into Yield-Aggregator
-
   stake matic 
 
   lending
 
-  deposit lp-token from swap-plane
+  farm
+
+  stake erc20 token
 
 
