@@ -14,8 +14,8 @@ contract PolylendToken is ERC20, AccessControl, VersionedInitializable {
     * Polylend token Context contains:
     *   name, symbol
     */
-    string internal constant NAME = 'Polylend Token';
-    string internal constant SYMBOL = 'PCOIN';
+    string public constant NAME = 'Polylend Token';
+    string public constant SYMBOL = 'PCOIN';
     // the number of accounts
     uint32 public _accountCounts;
 
@@ -151,6 +151,7 @@ contract PolylendToken is ERC20, AccessControl, VersionedInitializable {
         external
     {
         require(hasRole(MINTER_ROLE, _msgSender()), "Caller is not a minter");
+        require(account != address(this), "Mint is not allowed by self-contract");
         uint256 preSupply = super.totalSupply();
         bool addRet = false;
 
