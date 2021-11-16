@@ -1,36 +1,67 @@
 const PolylendToken = artifacts.require("PolylendToken");
 const BigNumber = require("bignumber.js");
+const UpgradeToken = artifacts.require("UpgradeToken");
+const PolylendTokenMock = artifacts.require("PolylendTokenMock");
 
 let account_one;
 let account_two;
 let account_three;
 let account_four;
 let pcoinIns;
+let _upgrade;
 let timestamp;
+
+let initFlag = true;
 
 contract('MintPolicyMock', async accounts => {
   beforeEach(async () => {
-    pcoinIns = await PolylendToken.deployed();
-    account_one = accounts[0];
-    account_two = accounts[1];
-    account_three = accounts[2];
-    account_four = accounts[3];
-    //GpMockAddress = await GpMock.at(GpMockContractIns.address);
-    //LpMockAddress = await LpMock.at(LpMockContractIns.address);
-    //console.log(GpMockContractIns.address);
-    timestamp = (await web3.eth.getBlock()).timestamp;
+    if ( initFlag ) {
+        account_one = accounts[0];
+        account_two = accounts[1];
+        account_three = accounts[2];
+        account_four = accounts[3];
+
+        pcoinIns = await PolylendToken.deployed();
+
+        _upgrade = await UpgradeToken.deployed();
+        var name = await pcoinIns.NAME();
+        var symbol = await pcoinIns.SYMBOL();
+        var _initParams = [
+            account_one,
+            pcoinIns.address,
+            name,
+            symbol,
+            18];
+
+        await _upgrade.Initialize(_initParams, {from:accounts[0]});
+        var proxyAddress = await _upgrade._tokenProxy();
+        console.log(proxyAddress);
+
+//        _initParams = [
+//            account_two,
+//            pcoinIns.address,
+//            name,
+//            symbol,
+//            18
+//        ];
+        pcoinIns = await PolylendToken.at(proxyAddress);
+        //await _upgrade.Initialize(_initParams, {from:accounts[0]});
+
+        //timestamp = (await web3.eth.getBlock()).timestamp;
+        initFlag = false;
+    }
   });
 
   it('init', async() => {
-    var name = await pcoinIns.name();
-    var symbol = await pcoinIns.symbol();
-    var decimals = (await pcoinIns.decimals()).toNumber();
-    //var maxSupply = (await pcoinIns.getMaxSupply()).toNumber();
-    assert.equal(name, "Polylend Token");
-    assert.equal(symbol, "PCOIN");
-    assert.equal(decimals, 18);
-    //assert.equal(maxSupply, 10000*10000);
-    console.log(name, symbol, decimals);
+      var name = await pcoinIns.name();
+      var symbol = await pcoinIns.symbol();
+      var decimals = (await pcoinIns.decimals()).toNumber();
+      assert.equal(name, "Polylend Token");
+      assert.equal(symbol, "PCOIN");
+      assert.equal(decimals, 18);
+      console.log(name, symbol, decimals);
+      var isRole = await pcoinIns.hasRole('0x00', account_one);
+      assert.equal(isRole, true);
   });
 
   it('mint', async() => {
@@ -152,4 +183,37 @@ contract('MintPolicyMock', async accounts => {
     console.log("version=" + revision);
   });
 
- });
+  it ('prxoy-upgrade', async() => {
+
+       var totalSupply = new BigNumber(await pcoinIns.totalSupply());
+       console.log(totalSupply.toNumber());
+
+       var name = await pcoinIns.name();
+       var symbol = await pcoinIns.symbol();
+
+       var pcoinMock = await PolylendTokenMock.deployed();
+
+       var _initParams = [
+          account_one,
+          pcoinMock.address,
+          name,
+          symbol,
+          18
+       ];
+
+       await _upgrade.Upgrade(_initParams, {from: account_one});
+
+       totalSupply = new BigNumber(await pcoinIns.totalSupply());
+       console.log(totalSupply.toNumber());
+
+       //pcoinProxy = await PolylendToken.at(await _upgrade._tokenProxy());
+       //var symbol = await pcoinProxy.symbol();
+       //console.log(symbol);
+
+       //var pcoinMock = await PolylendTokenMock.deployed();
+
+       //await _upgrade.Upgrade(pcoinMock.address, {from:accounts[0]});
+
+  });
+
+});

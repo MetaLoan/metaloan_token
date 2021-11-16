@@ -81,6 +81,13 @@ contract PolylendToken is ERC20, AccessControl, VersionedInitializable {
     event SnapshotRecord(address indexed account,
                          uint128 block,
                          uint128 amount);
+    /*
+    * Initialize event
+    */
+    event Initialize(address admin,
+                     string name,
+                     string symbol,
+                     uint8 decimals);
 
     /*
     * BlackList event
@@ -92,21 +99,23 @@ contract PolylendToken is ERC20, AccessControl, VersionedInitializable {
     /*
     * set admin role for pcoin by constructor account
     */
-    constructor () ERC20(NAME, SYMBOL)
-    {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    constructor () ERC20('Polylend Impl', 'PIMPL') {
+        //_setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _accountCounts = 0;
     }
 
-    /*
-    * @dev initialize the contract
-    *   init DOMAIN_SEPARATOR for permit
+    /**
+    * @dev initializes the contract upon assignment to the InitializableAdminUpgradeabilityProxy
     */
-    function initialize()
+    function initialize(
+        address admin,
+        string calldata name_,
+        string calldata symbol_,
+        uint8 decimals_
+    )
         external
+        initializer
     {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Caller is initialize by admin");
-
         uint256 chainId;
 
         assembly {
@@ -115,13 +124,21 @@ contract PolylendToken is ERC20, AccessControl, VersionedInitializable {
 
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-            EIP712_DOMAIN,
-            keccak256(bytes(NAME)),
-            keccak256(EIP712_REVISION),
-            chainId,
-            address(this)
+                EIP712_DOMAIN,
+                keccak256(bytes(NAME)),
+                keccak256(EIP712_REVISION),
+                chainId,
+                address(this)
             )
         );
+
+        _setName(name_);
+        _setSymbol(symbol_);
+        _setDecimals(decimals_);
+
+        _setupRole(DEFAULT_ADMIN_ROLE, admin);
+
+        emit Initialize(admin, name_, symbol_, decimals_);
     }
 
     /*
@@ -138,7 +155,7 @@ contract PolylendToken is ERC20, AccessControl, VersionedInitializable {
     /**
     * @dev returns the revision of the implementation contract
     */
-    function getRevision() internal override pure returns (uint256) {
+    function getRevision() internal virtual override pure returns (uint256) {
         return REVISION;
     }
 
