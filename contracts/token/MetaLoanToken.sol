@@ -6,16 +6,16 @@ import {ERC20} from "../dependencies/contracts/token/ERC20/ERC20.sol";
 import {SafeMath} from "../dependencies/contracts/utils/math/SafeMath.sol";
 import {VersionedInitializable} from '../utils/VersionedInitializable.sol';
 
-contract PolylendToken is ERC20, AccessControl, VersionedInitializable {
+contract MetaLoanToken is ERC20, AccessControl, VersionedInitializable {
     using SafeMath for uint256;
 
     /******** Key Variable ********/
     /*
-    * Polylend token Context contains:
+    * Meta Loan token Context contains:
     *   name, symbol
     */
-    string public constant NAME = 'Polylend Token';
-    string public constant SYMBOL = 'PCOIN';
+    string public constant NAME = 'MetaLoan Token';
+    string public constant SYMBOL = 'MCOIN';
     // the number of accounts
     uint32 public _accountCounts;
 
@@ -99,7 +99,7 @@ contract PolylendToken is ERC20, AccessControl, VersionedInitializable {
     /*
     * set admin role for pcoin by constructor account
     */
-    constructor () ERC20('Polylend Impl', 'PIMPL') {
+    constructor () ERC20('MetaLoan Impl', 'MIMPL') {
         //_setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _accountCounts = 0;
     }

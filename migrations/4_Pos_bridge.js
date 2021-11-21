@@ -1,4 +1,4 @@
-const PolylendToken = artifacts.require("PolylendToken");
+const MetaLoanToken = artifacts.require("MetaLoanToken");
 const BigNumber = require("bignumber.js");
 const MaticPOSClient = require('@maticnetwork/maticjs').MaticPOSClient;
 const HDWalletProvider = require('@truffle/hdwallet-provider');

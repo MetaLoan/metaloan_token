@@ -1,9 +1,9 @@
-const PolylendToken = artifacts.require("PolylendToken");
-const PolylendTokenMock = artifacts.require("PolylendTokenMock");
+const MetaLoanToken = artifacts.require("MetaLoanToken");
+const MetaLoanTokenMock = artifacts.require("MetaLoanTokenMock");
 const UpgradeToken = artifacts.require("UpgradeToken");
 
 module.exports = async function (deployer, network, accounts) {
-  await deployer.deploy(PolylendToken);
+  await deployer.deploy(MetaLoanToken);
   await deployer.deploy(UpgradeToken);
-  await deployer.deploy(PolylendTokenMock);
+  await deployer.deploy(MetaLoanTokenMock);
 };
