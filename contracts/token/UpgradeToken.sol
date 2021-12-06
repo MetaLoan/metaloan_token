@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {InitializableAdminUpgradeabilityProxy} from "../dependencies/contracts/proxy/InitializableAdminUpgradeabilityProxy.sol";
 import {Ownable} from "../dependencies/contracts/access/Ownable.sol";
-import {MetaLoanToken} from "./MetaLoanToken.sol";
+import {PolylendToken} from "./PolylendToken.sol";
 
 contract UpgradeToken is Ownable {
 
@@ -26,7 +26,7 @@ contract UpgradeToken is Ownable {
             new InitializableAdminUpgradeabilityProxy();
 
         bytes memory initParams = abi.encodeWithSelector(
-            MetaLoanToken.initialize.selector,
+            PolylendToken.initialize.selector,
             input.admin,
             input.name,
             input.symbol,
@@ -47,7 +47,7 @@ contract UpgradeToken is Ownable {
             InitializableAdminUpgradeabilityProxy(payable(_tokenProxy));
 
         bytes memory initParams = abi.encodeWithSelector(
-            MetaLoanToken.initialize.selector,
+            PolylendToken.initialize.selector,
             input.admin,
             input.name,
             input.symbol,

@@ -1,4 +1,4 @@
-const MetaLoanToken = artifacts.require("MetaLoanToken");
+const PolylendToken = artifacts.require("PolylendToken");
 const BigNumber = require("bignumber.js");
 const MaticPOSClient = require('@maticnetwork/maticjs').MaticPOSClient;
 const HDWalletProvider = require('@truffle/hdwallet-provider');
@@ -8,6 +8,10 @@ const fs = require('fs');
 const pcoin_address = '0xC7aC3CD5721269de0CD033Be0034516e025FA8FE';
 
 module.exports = async function (deployer, network, accounts) {
+    if ( network == 'test' ) {
+        return;
+    }
+
     // for mumbai testnet
     if ( network == 'Goerli' ) {
         console.log(web3.utils);

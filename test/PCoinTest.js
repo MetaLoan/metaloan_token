@@ -1,7 +1,7 @@
-const MetaLoanToken = artifacts.require("MetaLoanToken");
+const PolylendToken = artifacts.require("PolylendToken");
 const BigNumber = require("bignumber.js");
 const UpgradeToken = artifacts.require("UpgradeToken");
-const MetaLoanTokenMock = artifacts.require("MetaLoanTokenMock");
+const PolylendTokenMock = artifacts.require("PolylendTokenMock");
 
 let account_one;
 let account_two;
@@ -21,7 +21,7 @@ contract('MintPolicyMock', async accounts => {
         account_three = accounts[2];
         account_four = accounts[3];
 
-        mcoinIns = await MetaLoanToken.deployed();
+        mcoinIns = await PolylendToken.deployed();
 
         _upgrade = await UpgradeToken.deployed();
         var name = await mcoinIns.NAME();
@@ -44,7 +44,7 @@ contract('MintPolicyMock', async accounts => {
 //            symbol,
 //            18
 //        ];
-        mcoinIns = await MetaLoanToken.at(proxyAddress);
+        mcoinIns = await PolylendToken.at(proxyAddress);
         //await _upgrade.Initialize(_initParams, {from:accounts[0]});
 
         //timestamp = (await web3.eth.getBlock()).timestamp;
@@ -56,7 +56,7 @@ contract('MintPolicyMock', async accounts => {
       var name = await mcoinIns.name();
       var symbol = await mcoinIns.symbol();
       var decimals = (await mcoinIns.decimals()).toNumber();
-      assert.equal(name, "MetaLoan Token");
+      assert.equal(name, "Polylend Token");
       assert.equal(symbol, "MCOIN");
       assert.equal(decimals, 18);
       console.log(name, symbol, decimals);
@@ -191,7 +191,7 @@ contract('MintPolicyMock', async accounts => {
        var name = await mcoinIns.name();
        var symbol = await mcoinIns.symbol();
 
-       var mcoinMock = await MetaLoanTokenMock.deployed();
+       var mcoinMock = await PolylendTokenMock.deployed();
 
        var _initParams = [
           account_one,

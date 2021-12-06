@@ -1,16 +1,20 @@
-const MetaLoanToken = artifacts.require("MetaLoanToken");
+const Polylend = artifacts.require("PolylendToken");
 
 module.exports = async function (deployer, network, accounts) {
+    if ( network == 'test' ) {
+        return;
+    }
+
     if ( network == 'Goerli' ) {
         console.log("User=" + accounts[0]);
-        await deployer.deploy(MetaLoanToken, {from: accounts[0]});
+        await deployer.deploy(Polylend, {from: accounts[0]});
 
     } else if ( network == 'ropsten' ) {
         console.log("User=" + accounts[0]);
-        await deployer.deploy(MetaLoanToken, {from: accounts[0]});
+        await deployer.deploy(Polylend, {from: accounts[0]});
     }
 
-    var MCoin = await MetaLoanToken.deployed();
-    var symbol = await MCoin.symbol();
+    var PCoin = await Polylend.deployed();
+    var symbol = await PCoin.symbol();
     console.log(symbol);
 }
